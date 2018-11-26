@@ -15,7 +15,7 @@ mysql
 * Настроить GTID репликацию
 
 варианты которые принимаются к сдаче
-- рабочий вагрантафайл
-- скрины или логи SHOW TABLES
+- рабочий вагрантафайл - https://github.com/dmirty/30/blob/master/Vagrantfile
+- скрины или логи SHOW TABLES- https://github.com/dmirty/30/blob/master/SHOW%20TABLES.JPG
 * конфиги
-* пример в логе изменения строки и появления строки на реплике
+* пример в логе изменения строки и появления строки на реплике https://github.com/dmirty/30/blob/master/INSERT.JPG
