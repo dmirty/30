@@ -1,32 +1,45 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure(2) do |config|
-  config.vm.box = "centos/7"
-  config.vm.synced_folder ".", "/vagrant",type:"virtualbox"
-  config.vm.provider "virtualbox" do |v|
-      v.memory = 1024
-      v.cpus = 2
-  end
+Vagrant.configure("2") do |config|
+  config.vm.synced_folder ".", "/vagrant", mount_options: ["dmode=700,fmode=600"]
+  config.vm.synced_folder "./config", "/vagrant/config", mount_options: ["dmode=755,fmode=755"]
   
-  config.ssh.username = "vagrant"
+  # run slave first
+  config.vm.define "mysqlslave" do |mysqlslave|
+    mysqlslave.vm.box = "ubuntu/precise64"
+    mysqlslave.vm.hostname = 'mysqlslave'
+    mysqlslave.vm.synced_folder "./data/slave", "/var/lib/mysql_vagrant" , id: "mysql",
+    owner: 108, group: 113,  # owner: "mysql", group: "mysql",
+    mount_options: ["dmode=775,fmode=664"]
 
-  config.vm.define "posgr1" do |posgr1|
-    posgr1.vm.network "public_network", ip: "192.168.1.66"
-    
-    posgr1.vm.hostname = "posgr1.local"
-  end
+    mysqlslave.vm.network :private_network, ip: "192.168.100.12"
 
-  config.vm.define "posgr2slave" do |posgr2slave|
-    posgr2slave.vm.provider :virtualbox do |vb|
-      vb.customize ["modifyvm", :id, "--memory", "1024"]
-      vb.cpus = 1
+    mysqlslave.vm.provider :virtualbox do |v|
+      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      v.customize ["modifyvm", :id, "--memory", 256]
+      v.customize ["modifyvm", :id, "--name", "mysqlslave"]
     end
-    posgr2slave.vm.network "public_network", ip: "192.168.1.67"
-    
-    posgr2slave.vm.hostname = "posgr2slave.local"
+
+    mysqlslave.vm.provision :shell, path: "bootstrap-slave.sh"
   end
 
+  config.vm.define "mysqlmaster" do |mysqlmaster|
+    mysqlmaster.vm.box = "ubuntu/precise64"
+    mysqlmaster.vm.hostname = 'mysqlmaster'
+    mysqlmaster.vm.synced_folder "./data/master", "/var/lib/mysql_vagrant" , id: "mysql",
+    owner: 108, group: 113,  # owner: "mysql", group: "mysql",
+    mount_options: ["dmode=775,fmode=664"]
 
+    mysqlmaster.vm.network :private_network, ip: "192.168.100.11"
 
+    mysqlmaster.vm.provider :virtualbox do |v|
+      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      v.customize ["modifyvm", :id, "--memory", 256]
+      v.customize ["modifyvm", :id, "--name", "mysqlmaster"]      
+    end
+
+    mysqlmaster.vm.provision :shell, path: "bootstrap-master.sh"
+
+  end  
 end
